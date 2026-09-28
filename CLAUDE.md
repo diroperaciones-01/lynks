@@ -210,12 +210,56 @@ Al final: resumen con conteo por estado y % global de transmisión del grupo.
 
 ---
 
-## Módulo 5 (futuro) — Límites configurados vs alertas activas
+## Módulo 5 — Auditoría de alertas vs límites configurados
 
-Este módulo se desarrollará en una segunda fase. Verificará si cada equipo tiene
-la alerta correctamente configurada según el límite definido para su tipo de variable.
+**Activación**: Este módulo se ejecuta **bajo demanda por grupo**, cuando el usuario indique:
+> "Ejecuta auditoría de alertas para el grupo [nombre]"
 
-Herramientas a usar: `get_point_alerts`, `get_point_raw_alerts`.
+**No ejecutar** como parte del informe semanal rutinario hasta que se complete el barrido
+grupo por grupo y se valide la metodología.
+
+**Objetivo**: verificar que cada límite configurado en un equipo tenga una alerta correspondiente
+con la variable correcta, operador lógico correcto, umbral coincidente, habilitada y armada.
+
+**Herramientas**:
+1. `get_points_by_group` → listar equipos del grupo.
+2. `get_point_status` por cada equipo → leer variables de límite (`Tmin_*`, `Tmax_*`, `HRmin_*`, `HRmax_*`).
+3. `get_point_raw_alerts` por cada equipo → obtener configuración completa de cada alerta.
+
+**Lógica de verificación** (por cada límite encontrado en el equipo):
+1. Buscar en `get_point_raw_alerts` una alerta que monitoree la variable correspondiente
+   (`var_label` debe coincidir con la variable del límite, ej. "Temperatura Nevera", "Humedad Relativa").
+2. Verificar operador: límite mínimo → `op: "$lt"` · límite máximo → `op: "$gt"`.
+3. Verificar que `val` coincida con el valor del límite configurado.
+4. Verificar `enabled: "true"` (no deshabilitada).
+5. Verificar `armed: true` y que `time` no sea `-1` (desarmado permanente).
+
+**Hallazgos posibles**:
+- ✅ Correcto: alerta existe, variable correcta, operador correcto, umbral correcto, activa y armada.
+- 🔴 Alerta faltante: el límite existe en el equipo pero no hay alerta para esa variable.
+- 🔴 Variable incorrecta: la alerta existe pero `var_label` apunta a otra variable.
+- 🔴 Desarmado permanente: `armed: false` con `time: -1` — la alerta nunca puede dispararse.
+- ⚠️ Deshabilitada: `enabled: "false"` — la alerta está creada pero no activa.
+- ⚠️ Umbral incorrecto: la alerta existe y la variable es correcta, pero `val` no coincide con el límite.
+
+**Formato de salida**:
+```
+## Auditoría de Alertas — Grupo [Nombre] (DD/MM/YYYY)
+
+| Equipo             | Límite verificado          | Alerta  | Variable alerta       | Operador | Umbral  | Estado          |
+|--------------------|---------------------------|---------|----------------------|----------|---------|-----------------|
+| Nevera 1 Farmacia  | Tmin nevera (2°C)         | ✅ Sí   | Temperatura Nevera   | < (ok)   | 2 (ok)  | ✅ Correcto     |
+| Nevera 1 Farmacia  | Tmin_ambiente (15°C)      | 🔴 No   | —                    | —        | —       | 🔴 Sin alerta   |
+| Manejadora (LBM1)  | HRmin (35%)               | ⚠️ Sí   | Temperatura Nevera 3 | < (ok)   | 35 (ok) | 🔴 Var incorrecta|
+```
+
+Al final: resumen conteo por estado y lista priorizada de acciones.
+
+**Progreso del barrido por grupos** (actualizar al completar cada uno):
+| Grupo      | Auditado    | Hallazgos críticos |
+|------------|-------------|-------------------|
+| Castellana | ✅ 28/09/2026 | Manejadora LBM1272 var incorrecta + 8 alertas ambiente faltantes en neveras |
+| Grupo AFIN | Pendiente   | — |
 
 ---
 
