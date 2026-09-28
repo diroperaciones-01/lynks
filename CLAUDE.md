@@ -5,10 +5,16 @@ de los grupos de salud. El informe se ejecuta bajo demanda o de forma semanal se
 
 ---
 
-## Alcance actual (piloto)
+## Alcance actual (piloto — 2 grupos)
 
-Durante la fase de afinamiento, ejecutar **solo el grupo Castellana**.
-Una vez validado, extender a los 22 grupos de salud.
+Durante la fase de afinamiento, ejecutar los siguientes grupos:
+
+| Grupo       | ID                         | Equipos |
+|-------------|----------------------------|---------|
+| Castellana  | `6675fa70cefc9df3e4fdd9e6` | 13      |
+| Grupo AFIN  | `65afc216fee8ffeae08cd41a` | 33      |
+
+Una vez validado el piloto, extender a los 22 grupos de salud.
 
 Para activar el informe completo de todos los grupos, el usuario debe indicar explícitamente:
 > "ejecuta el informe para todos los grupos"
