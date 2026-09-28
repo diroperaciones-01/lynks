@@ -25,36 +25,64 @@ Para activar el informe completo de todos los grupos, el usuario debe indicar ex
 
 ---
 
-## Módulo 1 — Bolsa de correo y SMS consumida
+## Módulo 1 — Bolsa de notificaciones consumida
 
-**Objetivo**: mostrar el % de la bolsa de correo y SMS consumida a la fecha para cada grupo/cliente.
+**Objetivo**: mostrar el % de bolsa de correo, SMS, llamadas y WhatsApp consumida
+a la fecha para cada grupo/cliente.
 
-**Herramienta**: `get_group_overview` por cada grupo (primera opción); si no retorna
-datos de cuota, intentar `search_groups` buscando campos de plan/bolsa en la respuesta.
+**Fuente de datos**: Google Sheet actualizado diariamente.
+- **ID del sheet**: `1d0-FzqTUDBPoBqqaWkU6J6438zfQRHt8RMZyDV4taIo`
+- **Hoja**: `GroupsAGRO-SALUD` (204 filas, sectores SALUD y AGRO)
+- **Herramienta**: conector Google Drive — `read_file_content` con `fileId: "1d0-FzqTUDBPoBqqaWkU6J6438zfQRHt8RMZyDV4taIo"`
+
+**Columnas del sheet**:
+| Columna          | Descripción                          |
+|------------------|--------------------------------------|
+| `_id`            | ID del grupo en Lynks                |
+| `name`           | Nombre del cliente/grupo             |
+| `email_shots`    | Correos enviados (usado)             |
+| `email_bag`      | Límite de correos del plan           |
+| `PORCENTAJE EMAIL` | % consumido (ya calculado)         |
+| `sms_shots`      | SMS enviados (usado)                 |
+| `sms_bag`        | Límite de SMS del plan               |
+| `PORCENTAJE SMS` | % consumido (ya calculado)           |
+| `call_shots`     | Llamadas realizadas (usado)          |
+| `call_bag`       | Límite de llamadas del plan          |
+| `PORCENTAJE LLAMADA` | % consumido (ya calculado)       |
+| `wpp_shots`      | WhatsApp enviados (usado)            |
+| `wpp_bag`        | Límite de WhatsApp del plan          |
+| `PORCENTAJE WPP` | % consumido (ya calculado)           |
+| `enable`         | Si el grupo está activo              |
+| `points`         | Número de equipos                    |
 
 **Instrucciones**:
-1. Llama `get_group_overview` para el grupo.
-2. Busca en la respuesta campos relacionados con cuota de notificaciones:
-   `sms_quota`, `email_quota`, `sms_used`, `email_used`, `notifications`,
-   `plan`, `bolsa`, `quota`, `limit`, `consumed` o similares.
-3. Si los campos existen: calcula el porcentaje `(usado / total) * 100`.
-4. Si `get_group_overview` no retorna datos de cuota, intentar `search_groups`
-   con el nombre del grupo y revisar si la respuesta incluye información de plan.
-5. Si ninguna herramienta retorna datos de bolsa, reportar:
-   > ⚠️ **Datos de bolsa no disponibles vía MCP actual.**
-   > La información de consumo de correo/SMS está visible en
-   > `https://agro.lynks.com.co/?/groups` pero no está expuesta
-   > en las herramientas MCP actuales. Pendiente mapeo de endpoint.
-   y continuar con los demás módulos.
+1. Leer el sheet con `read_file_content(fileId: "1d0-FzqTUDBPoBqqaWkU6J6438zfQRHt8RMZyDV4taIo")`.
+2. Usar la hoja `GroupsAGRO-SALUD`.
+3. Para el informe piloto (Castellana), filtrar por `_id == "6675fa70cefc9df3e4fdd9e6"`.
+   Para el informe de todos los grupos de salud, filtrar por `Sector == "SALUD"`.
+4. Por cada fila filtrada, leer `PORCENTAJE EMAIL`, `PORCENTAJE SMS`,
+   `PORCENTAJE LLAMADA`, `PORCENTAJE WPP`.
+5. Si el valor es `#DIV/0!` → significa que la bolsa tiene límite 0 (no contratada).
+   Reportar como "— Sin bolsa" y excluir del semáforo.
+6. Si el valor es un porcentaje numérico, aplicar semáforo:
+   - < 70% → ✅ Normal
+   - 70–89% → ⚠️ Advertencia
+   - ≥ 90% → 🔴 Crítico (bolsa casi agotada — notificar al cliente)
+   - > 100% → 🔴🔴 **EXCEDIDO** (el grupo ya superó su bolsa contratada)
+7. Si el conector Google Drive no está disponible en la sesión, indicar:
+   > ⚠️ **Conector Google Drive no activo en esta sesión.**
+   > Actívalo en Configuración → Conectores y vuelve a ejecutar el informe.
 
 **Formato de salida**:
 ```
 ## Módulo 1 — Consumo de bolsa (al DD/MM/YYYY)
 
-| Grupo          | Correos usados | % Correo | SMS usados | % SMS |
-|----------------|---------------|----------|-----------|-------|
-| Castellana     | X / Y         | XX%      | X / Y     | XX%   |
+| Grupo      | Correo        | % Email | SMS         | % SMS | Llamadas    | % Call | WhatsApp    | % WPP |
+|------------|--------------|---------|------------|-------|------------|--------|------------|-------|
+| Castellana | 450 / 1,000  | 45% ✅  | 120 / 500  | 24% ✅ | 10 / 100   | 10% ✅ | 80 / 200   | 40% ✅ |
 ```
+
+> 🔴 Grupos con cualquier canal ≥ 90% requieren renovación de bolsa urgente.
 
 ---
 
