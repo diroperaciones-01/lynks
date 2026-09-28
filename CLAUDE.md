@@ -55,28 +55,20 @@ a la fecha para cada grupo/cliente.
 | `enable`         | Si el grupo está activo              |
 | `points`         | Número de equipos                    |
 
-**Nota importante sobre la lectura del sheet**:
-- `read_file_content` devuelve solo una muestra de ~12 filas. Con 204 filas, grupos como
-  Castellana (fila 21) pueden NO aparecer en la muestra.
-- `download_file_content` exporta únicamente la **primera hoja activa** del libro (GroupsFVL),
-  no GroupsAGRO-SALUD.
-- **Solución recomendada**: el usuario debe mover la hoja `GroupsAGRO-SALUD` como primera hoja
-  del libro, o exportarla como un archivo Google Sheets separado en Drive.
-
-**Datos de referencia Castellana** (última lectura conocida — actualizar manualmente si cambian):
-- Email: ver sheet fila 21
-- SMS: ver sheet fila 21
-- `_id`: `6675fa70cefc9df3e4fdd9e6`, fila 21 en GroupsAGRO-SALUD
+**Nota sobre la lectura del sheet**:
+`download_file_content` exporta la **primera hoja activa** del libro como CSV completo (base64).
+La hoja `GroupsAGRO-SALUD` debe ser la primera hoja del libro (ya configurado).
+`read_file_content` solo devuelve una muestra parcial — no usar para filtrar filas específicas.
 
 **Instrucciones**:
-1. Intentar `read_file_content(fileId: "1d0-FzqTUDBPoBqqaWkU6J6438zfQRHt8RMZyDV4taIo")`.
-2. Usar la hoja `GroupsAGRO-SALUD`.
+1. Llamar `download_file_content(fileId: "1d0-FzqTUDBPoBqqaWkU6J6438zfQRHt8RMZyDV4taIo")`.
+   La respuesta contiene el campo `content` en base64 — decodificarlo para obtener el CSV.
+2. Parsear el CSV. Columnas (en orden): `_id, name, Puntos, Sector, email_shots, email_bag,
+   PORCENTAJE EMAIL, sms_shots, sms_bag, PORCENTAJE SMS, call_shots, call_bag,
+   PORCENTAJE LLAMADA, wpp_shots, wpp_bag, PORCENTAJE WPP, enable, points`
 3. Para el informe piloto (Castellana), buscar la fila con `_id == "6675fa70cefc9df3e4fdd9e6"`.
-   - Si no aparece en la muestra, reportar:
-     > ⚠️ Fila de Castellana no visible en muestra del sheet. Para resolverlo:
-     > mover `GroupsAGRO-SALUD` como primera hoja del libro en Google Sheets.
-   - Continuar con los demás módulos sin bloquear el informe.
-4. Para el informe de todos los grupos de salud, filtrar por `Sector == "SALUD"`.
+   Para el informe de todos los grupos de salud, filtrar por `Sector == "SALUD"`.
+4. Leer `PORCENTAJE EMAIL`, `PORCENTAJE SMS`, `PORCENTAJE LLAMADA`, `PORCENTAJE WPP`.
 4. Por cada fila filtrada, leer `PORCENTAJE EMAIL`, `PORCENTAJE SMS`,
    `PORCENTAJE LLAMADA`, `PORCENTAJE WPP`.
 5. Si el valor es `#DIV/0!` → significa que la bolsa tiene límite 0 (no contratada).
