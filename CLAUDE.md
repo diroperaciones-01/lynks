@@ -279,3 +279,9 @@ Al final: resumen conteo por estado y lista priorizada de acciones.
 Buscar con `search_groups` sin argumento para listar todos los grupos disponibles.
 Filtrar solo aquellos que correspondan a grupos de salud según nomenclatura conocida.
 Durante el piloto, usar únicamente **Castellana**.
+
+---
+
+## Memoria de trabajo
+
+Antes de trabajar en reportes nuevos o en la especificación del reporte agroclimático, leer `memoria/reporte-agroclimatico.md` (preferencias del usuario, decisiones, estaciones de prueba y rutinas creadas).
